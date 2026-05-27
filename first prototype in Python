@@ -1,0 +1,10 @@
+Import random
+Armbandog=1023                                     #This is arduino Baseline reading when you put it on
+Armband=random.randint(0-1023):
+	print(Armband)
+if Armband/Armbandog= 1:
+	print(“This Movement is Isometric”)
+Elif Armband/armbandog=Armband*(0.1,0.3)+Armband:   #This is change in movement 0.1 to 0.3
+	print(“This movement is Concentric”)
+if Armband/armbandog=Armband-Armband*(0.1,0.3):   #This is change in movement 0.1 to 0.3
+	print(“This Movement is eccentric”) 
