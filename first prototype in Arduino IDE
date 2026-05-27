@@ -1,0 +1,56 @@
+// Smart Textile Armband Prototype
+// Arduino Nano + Velostat Armband
+
+int Armband = 0;
+int ArmbandOG = 1023;   // Baseline value
+
+float ratio = 0;
+
+void setup() {
+
+  Serial.begin(9600);
+
+}
+
+void loop() {
+
+  // Read sensor from A0
+  Armband = analogRead(A0);
+
+  // Print sensor value
+  Serial.print("Sensor Value: ");
+  Serial.println(Armband);
+
+  // Prevent divide-by-zero
+  if (ArmbandOG != 0) {
+
+    ratio = (float)Armband / (float)ArmbandOG;
+
+    // ISOMETRIC
+    if (ratio >= 0.95 && ratio <= 1.05) {
+
+      Serial.println("This Movement is Isometric");
+
+    }
+
+    // CONCENTRIC
+    else if (Armband > ArmbandOG * 1.1 &&
+             Armband <= ArmbandOG * 1.3) {
+
+      Serial.println("This Movement is Concentric");
+
+    }
+
+    // ECCENTRIC
+    else if (Armband < ArmbandOG * 0.9 &&
+             Armband >= ArmbandOG * 0.7) {
+
+      Serial.println("This Movement is Eccentric");
+
+    }
+
+  }
+
+  delay(100);
+}
+
