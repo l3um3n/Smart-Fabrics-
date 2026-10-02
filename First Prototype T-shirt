@@ -1,0 +1,166 @@
+Arduino V tshirt calibration
+// Smart Textile Armband Prototype
+// Arduino Nano + 11 Velostat Regions
+
+const int NUM_REGIONS = 11;
+
+// Analog pins used for each region
+// Change these to match your hardware setup
+int sensorPins[NUM_REGIONS] = {
+  A0, A1, A2, A3, A4,
+  A5, A6, A7, A0, A1, A2
+};
+
+// Baseline values for each region
+// Replace with calibration values for each sensor
+int naturalMin[NUM_REGIONS];
+int naturalMax[NUM_REGIONS];
+int flexMax[NUM_REGIONS];
+
+void calibrateNatural() {
+
+  Serial.println("CALIBRATION PHASE 1");
+  Serial.println("Move naturally for 30 seconds.");
+
+  // Initialize values
+  for(int i=0;i<NUM_REGIONS;i++){
+    naturalMin[i] = 1023;
+    naturalMax[i] = 0;
+  }
+
+  unsigned long startTime = millis();
+
+  while(millis() - startTime < 30000){
+
+    for(int i=0;i<NUM_REGIONS;i++){
+
+      int value = analogRead(sensorPins[i]);
+
+      if(value < naturalMin[i])
+        naturalMin[i] = value;
+
+      if(value > naturalMax[i])
+        naturalMax[i] = value;
+    }
+  }
+
+  Serial.println("Natural calibration complete.");
+}
+
+
+void calibrateFlex() {
+
+  Serial.println("CALIBRATION PHASE 2");
+  Serial.println("Flex all muscles as hard as possible for 15 seconds.");
+
+  for(int i=0;i<NUM_REGIONS;i++){
+    flexMax[i] = 0;
+  }
+
+  unsigned long startTime = millis();
+
+  while(millis() - startTime < 15000){
+
+    for(int i=0;i<NUM_REGIONS;i++){
+
+      int value = analogRead(sensorPins[i]);
+
+      if(value > flexMax[i])
+        flexMax[i] = value;
+    }
+  }
+
+  Serial.println("Flex calibration complete.");
+}
+
+float activation =
+(float)(sensorValue[region] - naturalMin[region]) /
+(float)(flexMax[region] - naturalMin[region]);
+
+activation = constrain(activation,0.0,1.0);
+
+float previousActivation[NUM_REGIONS];
+
+if(abs(activation - previousActivation[region]) < 0.03){
+
+    Serial.println("Isometric");
+
+}
+else if(activation > previousActivation[region]){
+
+    Serial.println("Concentric");
+
+}
+else{
+
+    Serial.println("Eccentric");
+
+}
+previousActivation[region] = activation;
+
+// Current sensor readings
+int sensorValue[NUM_REGIONS];
+
+// Ratio values
+float ratio[NUM_REGIONS];
+
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+
+  for (int region = 0; region < NUM_REGIONS; region++) {
+
+    // Read sensor
+    sensorValue[region] = analogRead(sensorPins[region]);
+
+    Serial.print("Region ");
+    Serial.print(region + 1);
+    Serial.print(" Value: ");
+    Serial.println(sensorValue[region]);
+
+    // Prevent divide-by-zero
+    if (baseline[region] != 0) {
+
+      ratio[region] =
+        (float)sensorValue[region] /
+        (float)baseline[region];
+
+      // ISOMETRIC
+      if (ratio[region] >= 0.95 &&
+          ratio[region] <= 1.05) {
+
+        Serial.print("Region ");
+        Serial.print(region + 1);
+        Serial.println(": Isometric");
+      }
+
+      // CONCENTRIC
+      else if (sensorValue[region] >
+               baseline[region] * 1.1 &&
+               sensorValue[region] <=
+               baseline[region] * 1.3) {
+
+        Serial.print("Region ");
+        Serial.print(region + 1);
+        Serial.println(": Concentric");
+      }
+
+      // ECCENTRIC
+      else if (sensorValue[region] <
+               baseline[region] * 0.9 &&
+               sensorValue[region] >=
+               baseline[region] * 0.7) {
+
+        Serial.print("Region ");
+        Serial.print(region + 1);
+        Serial.println(": Eccentric");
+      }
+    }
+
+    Serial.println("--------------------");
+  }
+
+  delay(100);
+}
