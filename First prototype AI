@@ -1,0 +1,92 @@
+import os
+from openai import OpenAI
+
+# ---------- CONFIG ----------
+PROJECT_ROOT = "."
+ARDUINO_DIR = os.path.join(PROJECT_ROOT, "arduino")
+PYTHON_DIR = os.path.join(PROJECT_ROOT, "python")
+
+client = OpenAI(api_key="YOUR_API_KEY_HERE")
+# ----------------------------
+
+
+def load_code_from_folder(folder, extensions):
+    collected_code = []
+
+    for root, _, files in os.walk(folder):
+        for file in files:
+            if file.endswith(extensions):
+                path = os.path.join(root, file)
+                with open(path, "r", encoding="utf-8") as f:
+                    collected_code.append(
+                        f"\n\n### File: {file}\n{f.read()}"
+                    )
+
+    return "\n".join(collected_code)
+
+
+def load_full_codebase():
+    arduino_code = load_code_from_folder(
+        ARDUINO_DIR, (".ino", ".h", ".cpp")
+    )
+
+    python_code = load_code_from_folder(
+        PYTHON_DIR, (".py",)
+    )
+
+    return arduino_code, python_code
+
+
+def ask_chatbot(arduino_code, python_code, question):
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "You are an expert embedded systems and Python assistant. "
+                "You analyze Arduino firmware and Python control code together "
+                "and answer questions based strictly on the provided code."
+            )
+        },
+        {
+            "role": "user",
+            "content": (
+                "=== ARDUINO CODE ===\n"
+                f"{arduino_code}\n\n"
+                "=== PYTHON CODE ===\n"
+                f"{python_code}\n\n"
+                "=== QUESTION ===\n"
+                f"{question}"
+            )
+        }
+    ]
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=messages
+    )
+
+    return response.choices[0].message.content
+
+
+# ---------- MAIN LOOP ----------
+if __name__ == "__main__":
+    print("Arduino + Python Code Chatbot")
+    print("Type 'quit' to exit.\n")
+
+    arduino_code, python_code = load_full_codebase()
+
+    while True:
+        user_question = input("Ask a question about your code: ")
+
+        if user_question.lower() == "quit":
+            break
+
+        answer = ask_chatbot(
+            arduino_code,
+            python_code,
+            user_question
+        )
+
+        print("\n--- AI Response ---")
+        print(answer)
+        print("-------------------\n")
